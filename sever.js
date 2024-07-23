@@ -15,13 +15,21 @@ connectDB();
 // Define API routes
 app.get('/dayscreen', async (req, res) => {
   try {
+    const { admin_id } = req.query;
+    
+    if (!admin_id) {
+      return res.status(400).json({ error: 'admin_id not provided' });
+    }
+
     const query = `
       SELECT e.id, e.name, a.date AS attendance_date, a.status AS attendance_status, a.color AS attendance_color
       FROM employees e
       LEFT JOIN attendance a ON e.id = a.employee_id
+      WHERE e.admin_id = $1
       ORDER BY e.id, a.date
     `;
-    const result = await client.query(query);
+    
+    const result = await client.query(query, [admin_id]);
 
     // Transform data into desired structure
     const formattedResults = [];
@@ -66,6 +74,7 @@ app.get('/dayscreen', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 
 app.put('/updateAttendance', async (req, res) => {
   const { employee_id, date, status, color } = req.body;
