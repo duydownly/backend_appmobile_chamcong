@@ -118,25 +118,24 @@ app.post('/addAttendance', async (req, res) => {
 });
 
 app.post('/aeas', async (req, res) => {
-  const { fullName, phoneNumber, password, idNumber, dob, address, payrollType, salary, payDate, admin_id } = req.body;
+  const { fullName, phoneNumber, password, idNumber, dob, address, payrollType, salary, currency, admin_id } = req.body;
 
-  if (!fullName || !phoneNumber || !password || !idNumber || !dob || !address || !payrollType || !salary || !payDate || !admin_id) {
+  if (!fullName || !phoneNumber || !password || !idNumber || !dob || !address || !payrollType || !salary || !currency || !admin_id) {
     return res.status(400).json({ error: 'Invalid data' });
   }
 
   try {
-
     const query = `
       WITH inserted_employee AS (
         INSERT INTO public.employees (name, phone, password, cmnd, birth_date, address, admin_id)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING id AS employee_id
       )
-      INSERT INTO public.salaries (employee_id, type, salary, pay_date)
-      SELECT employee_id, $8 AS type, $9 AS salary, $10 AS pay_date FROM inserted_employee;
+      INSERT INTO public.salaries (employee_id, type, salary, currency)
+      SELECT employee_id, $8 AS type, $9 AS salary, $10 AS currency FROM inserted_employee;
     `;
 
-    const values = [fullName, phoneNumber, password, idNumber, dob, address, admin_id, payrollType, salary, payDate];
+    const values = [fullName, phoneNumber, password, idNumber, dob, address, admin_id, payrollType, salary, currency];
 
     await client.query(query, values);
 
