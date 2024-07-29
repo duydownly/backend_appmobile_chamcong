@@ -246,6 +246,31 @@ app.get('/employees', async (req, res) => {
   }
 });
 // Start server
+app.put('/update-employee', async (req, res) => {
+  const { employee_id, field, value } = req.body;
+
+  if (!employee_id || !field || value === undefined) {
+    return res.status(400).send('Missing required fields');
+  }
+
+  try {
+    let result;
+
+    // Update the corresponding table based on the field
+    if (['name', 'phone', 'password', 'cmnd', 'birth_date', 'address'].includes(field)) {
+      result = await pool.query(`UPDATE employees SET ${field} = $1 WHERE id = $2 RETURNING *`, [value, employee_id]);
+    } else if (['type', 'salary', 'currency'].includes(field)) {
+      result = await pool.query(`UPDATE salaries SET ${field} = $1 WHERE employee_id = $2 RETURNING *`, [value, employee_id]);
+    } else {
+      return res.status(400).send('Invalid field');
+    }
+
+    res.status(200).json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating employee information:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
