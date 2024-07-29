@@ -208,7 +208,7 @@ app.get('/employees', async (req, res) => {
       birth_date: row.birth_date.toISOString().split('T')[0], // Format date as YYYY-MM-DD
       address: row.address,
       admin_id: row.admin_id,
-      type: row.type === 'Monthly' ? 'Monthly' : 'Weekly', // Ensure type matches the desired output
+      type: row.type === 'Ngày' ? 'Ngày' : 'Tháng', // Ensure type matches the desired output
       salary: parseFloat(row.salary), // Ensure salary is a number
       currency: row.currency
     }));
@@ -219,6 +219,7 @@ app.get('/employees', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
