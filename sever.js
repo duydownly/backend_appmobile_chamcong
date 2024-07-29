@@ -246,7 +246,30 @@ app.get('/employees', async (req, res) => {
   }
 });
 // Start server
+app.put('/updateEmployee', async (req, res) => {
+  const { employee_id, field, value } = req.body;
 
+  if (!employee_id || !field || value === undefined) {
+    return res.status(400).json({ error: 'Invalid data' });
+  }
+
+  try {
+    let query;
+    if (['name', 'phone', 'password', 'cmnd', 'birth_date', 'address'].includes(field)) {
+      query = `UPDATE employees SET ${field} = $2 WHERE id = $1`;
+    } else if (['type', 'salary', 'currency'].includes(field)) {
+      query = `UPDATE salaries SET ${field} = $2 WHERE employee_id = $1`;
+    } else {
+      return res.status(400).json({ error: 'Invalid field' });
+    }
+
+    await pool.query(query, [employee_id, value]);
+    res.status(200).json({ message: 'Employee information updated successfully' });
+  } catch (err) {
+    console.error('Error updating employee information', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
