@@ -179,9 +179,15 @@ app.post('/login', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-app.get('/employees', async (req, res) => {
+pp.get('/employees', async (req, res) => {
   try {
-    const result = await pool.query(`
+    const { admin_id } = req.query;
+
+    if (!admin_id) {
+      return res.status(400).json({ error: 'admin_id not provided' });
+    }
+
+    const query = `
       SELECT
         e.id,
         e.name,
@@ -195,31 +201,50 @@ app.get('/employees', async (req, res) => {
         s.salary,
         s.currency
       FROM public.employees e
-      JOIN public.salaries s ON e.id = s.employee_id
-    `);
+      LEFT JOIN public.salaries s ON e.id = s.employee_id
+      WHERE e.admin_id = $1
+      ORDER BY e.id
+    `;
 
-    // Format the result to match the desired output
-    const employees = result.rows.map(row => ({
-      id: row.id,
-      name: row.name,
-      phone: row.phone,
-      password: row.password,
-      cmnd: row.cmnd,
-      birth_date: row.birth_date.toISOString().split('T')[0], // Format date as YYYY-MM-DD
-      address: row.address,
-      admin_id: row.admin_id,
-      type: row.type === 'Ngày' ? 'Ngày' : 'Tháng', // Ensure type matches the desired output
-      salary: parseFloat(row.salary), // Ensure salary is a number
-      currency: row.currency
-    }));
+    const result = await client.query(query, [admin_id]);
 
-    res.json({ employees });
+    // Định dạng kết quả để phù hợp với cấu trúc mong muốn
+    const formattedResults = [];
+    let currentEmployee = null;
+
+    result.rows.forEach(row => {
+      if (!currentEmployee || currentEmployee.id !== row.id) {
+        if (currentEmployee) {
+          formattedResults.push(currentEmployee);
+        }
+
+        currentEmployee = {
+          id: row.id,
+          name: row.name,
+          phone: row.phone,
+          password: row.password,
+          cmnd: row.cmnd,
+          birth_date: row.birth_date, // Định dạng ngày thành YYYY-MM-DD
+          address: row.address,
+          admin_id: row.admin_id,
+          type: row.type === 'Tháng' ? 'Tháng' : 'Ngày', // Đảm bảo type phù hợp với output mong muốn
+          amount: parseFloat(row.salary), // Đảm bảo salary là số
+          currency: row.currency        };
+      }
+
+     });
+
+    // Đẩy employee cuối cùng vào mảng kết quả
+    if (currentEmployee) {
+      formattedResults.push(currentEmployee);
+    }
+
+    res.json(formattedResults);
   } catch (error) {
     console.error('Error fetching data', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
