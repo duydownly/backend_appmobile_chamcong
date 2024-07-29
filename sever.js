@@ -263,13 +263,14 @@ app.put('/updateEmployee', async (req, res) => {
       return res.status(400).json({ error: 'Invalid field' });
     }
 
-    await pool.query(query, [employee_id, value]);
+    await client.query(query, [employee_id, value]);
     res.status(200).json({ message: 'Employee information updated successfully' });
   } catch (err) {
     console.error('Error updating employee information', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
