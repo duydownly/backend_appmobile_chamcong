@@ -179,7 +179,46 @@ app.post('/login', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+app.get('/employees', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        e.id,
+        e.name,
+        e.phone,
+        e.password,
+        e.cmnd,
+        e.birth_date,
+        e.address,
+        e.admin_id,
+        s.type,
+        s.salary,
+        s.currency
+      FROM public.employees e
+      JOIN public.salaries s ON e.id = s.employee_id
+    `);
 
+    // Format the result to match the desired output
+    const employees = result.rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      phone: row.phone,
+      password: row.password,
+      cmnd: row.cmnd,
+      birth_date: row.birth_date.toISOString().split('T')[0], // Format date as YYYY-MM-DD
+      address: row.address,
+      admin_id: row.admin_id,
+      type: row.type === 'Monthly' ? 'Monthly' : 'Weekly', // Ensure type matches the desired output
+      salary: parseFloat(row.salary), // Ensure salary is a number
+      currency: row.currency
+    }));
+
+    res.json({ employees });
+  } catch (error) {
+    console.error('Error fetching data', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
