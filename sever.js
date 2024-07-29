@@ -179,7 +179,7 @@ app.post('/login', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-pp.get('/employees', async (req, res) => {
+app.get('/employees', async (req, res) => {
   try {
     const { admin_id } = req.query;
 
