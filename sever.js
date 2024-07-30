@@ -270,7 +270,63 @@ app.put('/updateEmployee', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+app.put('/employeesunactive', async (req, res) => {
+  const { employee_id } = req.body;
 
+  if (!employee_id) {
+    return res.status(400).json({ error: 'employee_id is required' });
+  }
+
+  try {
+    const result = await client.query(
+      'UPDATE employees SET active_status = $1 WHERE id = $2 RETURNING *',
+      ['unactive', employee_id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Employee not found' });
+    }
+
+    res.json({ message: 'Employee locked successfully', employee: result.rows[0] });
+  } catch (error) {
+    console.error('Error locking employee:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+app.get('/employeesnameidforlock', async (req, res) => {
+  try {
+    const result = await client.query('SELECT id, name FROM employees');
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching employees:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+// Route để mở khóa nhân viên
+app.put('/employeesactive', async (req, res) => {
+  const { employee_id } = req.body;
+
+  if (!employee_id) {
+    return res.status(400).json({ error: 'employee_id is required' });
+  }
+
+  try {
+    const result = await client.query(
+      'UPDATE employees SET active_status = $1 WHERE id = $2 RETURNING *',
+      ['active', employee_id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Employee not found' });
+    }
+
+    res.json({ message: 'Employee unlocked successfully', employee: result.rows[0] });
+  } catch (error) {
+    console.error('Error unlocking employee:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
