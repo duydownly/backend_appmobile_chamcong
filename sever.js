@@ -270,6 +270,7 @@ app.put('/updateEmployee', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+// API để khóa nhân viên
 app.put('/employeesunactive', async (req, res) => {
   const { employee_id } = req.body;
 
@@ -279,7 +280,7 @@ app.put('/employeesunactive', async (req, res) => {
 
   try {
     const result = await client.query(
-      'UPDATE employees SET active_status = $1 WHERE id = $2 RETURNING *',
+      'UPDATE employees SET active_status = $1 WHERE id = $2',
       ['unactive', employee_id]
     );
 
@@ -287,23 +288,25 @@ app.put('/employeesunactive', async (req, res) => {
       return res.status(404).json({ error: 'Employee not found' });
     }
 
-    res.json({ message: 'Employee locked successfully', employee: result.rows[0] });
+    res.json({ message: 'Employee locked successfully' });
   } catch (error) {
     console.error('Error locking employee:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
+// API để lấy danh sách nhân viên (id và tên)
 app.get('/employeesnameidforlock', async (req, res) => {
   try {
     const result = await client.query('SELECT id, name FROM employees');
-
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching employees:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-// Route để mở khóa nhân viên
+
+// API để mở khóa nhân viên
 app.put('/employeesactive', async (req, res) => {
   const { employee_id } = req.body;
 
@@ -313,7 +316,7 @@ app.put('/employeesactive', async (req, res) => {
 
   try {
     const result = await client.query(
-      'UPDATE employees SET active_status = $1 WHERE id = $2 RETURNING *',
+      'UPDATE employees SET active_status = $1 WHERE id = $2',
       ['active', employee_id]
     );
 
@@ -321,12 +324,13 @@ app.put('/employeesactive', async (req, res) => {
       return res.status(404).json({ error: 'Employee not found' });
     }
 
-    res.json({ message: 'Employee unlocked successfully', employee: result.rows[0] });
+    res.json({ message: 'Employee unlocked successfully' });
   } catch (error) {
     console.error('Error unlocking employee:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
