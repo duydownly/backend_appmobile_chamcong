@@ -160,28 +160,42 @@ app.post('/addAttendance', async (req, res) => {
 app.post('/aeas', async (req, res) => {
   const { fullName, phoneNumber, password, idNumber, dob, address, payrollType, salary, currency, admin_id } = req.body;
 
+  // Log the received request body
+  console.log('Request Body:', req.body);
+
   if (!fullName || !phoneNumber || !password || !idNumber || !dob || !address || !payrollType || !salary || !currency || !admin_id) {
+    console.error('Invalid data:', {
+      fullName, phoneNumber, password, idNumber, dob, address, payrollType, salary, currency, admin_id
+    });
     return res.status(400).json({ error: 'Invalid data' });
   }
 
   try {
+    console.log('Preparing to insert employee and salary...');
+
     const query = `
-   WITH inserted_employee AS (
-        INSERT INTO public.employees (name, phone, password, cmnd, birth_date, address, admin_id, initiated_date)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      WITH inserted_employee AS (
+        INSERT INTO public.employees (name, phone, password, cmnd, birth_date, address, admin_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING id AS employee_id
       )
       INSERT INTO public.salaries (employee_id, type, salary, currency)
-      SELECT employee_id, $9 AS type, $10 AS salary, $11 AS currency FROM inserted_employee;
+      SELECT employee_id, $8 AS type, $9 AS salary, $10 AS currency FROM inserted_employee;
     `;
 
     const values = [fullName, phoneNumber, password, idNumber, dob, address, admin_id, payrollType, salary, currency];
+    
+    console.log('Query:', query);
+    console.log('Values:', values);
 
-    await client.query(query, values);
+    const result = await client.query(query, values);
+
+    console.log('Query Result:', result);
 
     res.status(201).json({ message: 'Employee and salary added successfully' });
   } catch (error) {
-    console.error('Error inserting employee and salary:', error);
+    console.error('Error inserting employee and salary:', error.message);
+    console.error('Stack Trace:', error.stack);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
