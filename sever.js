@@ -166,13 +166,13 @@ app.post('/aeas', async (req, res) => {
 
   try {
     const query = `
-      WITH inserted_employee AS (
-        INSERT INTO public.employees (name, phone, password, cmnd, birth_date, address, admin_id)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+   WITH inserted_employee AS (
+        INSERT INTO public.employees (name, phone, password, cmnd, birth_date, address, admin_id, initiated_date)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING id AS employee_id
       )
       INSERT INTO public.salaries (employee_id, type, salary, currency)
-      SELECT employee_id, $8 AS type, $9 AS salary, $10 AS currency FROM inserted_employee;
+      SELECT employee_id, $9 AS type, $10 AS salary, $11 AS currency FROM inserted_employee;
     `;
 
     const values = [fullName, phoneNumber, password, idNumber, dob, address, admin_id, payrollType, salary, currency];
