@@ -53,7 +53,10 @@ app.get('/dayscreen', async (req, res) => {
       }
 
       // Format the date to remove the time part
-      const formattedDate = new Date(row.attendance_date).toISOString().split('T')[0];
+      const date = new Date(row.attendance_date);
+      const formattedDate = date.getFullYear() + '-' +
+                            String(date.getMonth() + 1).padStart(2, '0') + '-' +
+                            String(date.getDate()).padStart(2, '0');
 
       currentEmployee.attendance.push({
         date: formattedDate,
@@ -77,6 +80,7 @@ app.get('/dayscreen', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 
 
 app.put('/updateAttendance', async (req, res) => {
