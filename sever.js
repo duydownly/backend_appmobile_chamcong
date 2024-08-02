@@ -384,6 +384,31 @@ app.put('/employeesactive', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+app.get('/employeetabscreen', async (req, res) => {
+  try {
+    // Lấy admin_id từ query parameters
+    const { admin_id } = req.query;
+    
+    if (!admin_id) {
+      return res.status(400).json({ error: 'admin_id not provided' });
+    }
+
+    // Thực hiện truy vấn SQL
+    const query = `
+      SELECT e.id, e.name, e.balance, s.type
+      FROM employees e
+      JOIN salaries s ON e.id = s.employee_id
+      WHERE e.admin_id = $1
+    `;
+    const result = await client.query(query, [admin_id]);
+
+    // Trả kết quả truy vấn
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error executing query', error.stack);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
