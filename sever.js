@@ -52,8 +52,11 @@ app.get('/dayscreen', async (req, res) => {
         };
       }
 
+      // Format the date to remove the time part
+      const formattedDate = new Date(row.attendance_date).toISOString().split('T')[0];
+
       currentEmployee.attendance.push({
-        date: row.attendance_date,
+        date: formattedDate,
         status: row.attendance_status,
         color: row.attendance_color,
       });
