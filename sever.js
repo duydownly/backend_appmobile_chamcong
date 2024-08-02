@@ -409,6 +409,48 @@ app.get('/employeetabscreen', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+app.post('/refreshbalance', async (req, res) => {
+  try {
+      await client.query('BEGIN');
+
+      const query = `
+      WITH recent_payment AS (
+          SELECT e.id AS employee_id,
+                 COALESCE(MAX(p.date), e.initiated_date) AS start_date
+          FROM employees e
+          LEFT JOIN payments_history p ON e.id = p.employee_id
+          GROUP BY e.id
+      ), 
+      total_salary AS (
+          SELECT a.employee_id,
+                 SUM(a.salaryinday) AS total_salary
+          FROM attendance a
+          JOIN recent_payment rp ON a.employee_id = rp.employee_id AND a.date >= rp.start_date AND a.date <= CURRENT_DATE
+          GROUP BY a.employee_id
+      )
+      UPDATE employees
+      SET balance = (
+          SELECT COALESCE(ts.total_salary, 0) AS total_salary
+          FROM total_salary ts
+          WHERE employees.id = ts.employee_id
+      )
+      WHERE EXISTS (
+          SELECT 1
+          FROM total_salary ts
+          WHERE employees.id = ts.employee_id
+      );
+      `;
+
+      await client.query(query);
+      await client.query('COMMIT');
+
+      res.status(200).send('Balance updated successfully');
+  } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('Error updating balance:', error);
+      res.status(500).send('Internal Server Error');
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
