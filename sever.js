@@ -84,19 +84,34 @@ app.put('/updateAttendance', async (req, res) => {
   }
 
   try {
-    const query = `
+    // Lấy lương từ bảng salaries
+    const salaryQuery = 'SELECT salary FROM salaries WHERE employee_id = $1 LIMIT 1';
+    const salaryResult = await client.query(salaryQuery, [employee_id]);
+    const salary = salaryResult.rows.length > 0 ? salaryResult.rows[0].salary : 0;
+
+    // Tính toán salaryinday dựa trên status
+    let salaryinday = 0;
+    if (status === 'Đủ') {
+      salaryinday = salary;
+    } else if (status === 'Nửa') {
+      salaryinday = salary / 2;
+    } else if (status === 'Vắng') {
+      salaryinday = 0;
+    }
+
+    // Cập nhật attendance
+    const updateQuery = `
       UPDATE attendance
-      SET status = $3, color = $4
+      SET status = $3, color = $4, salaryinday = $5
       WHERE employee_id = $1 AND date = $2
     `;
-    await client.query(query, [employee_id, date, status, color]);
+    await client.query(updateQuery, [employee_id, date, status, color, salaryinday]);
     res.status(200).json({ message: 'Attendance updated successfully' });
   } catch (err) {
     console.error('Error updating attendance', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-
 app.post('/addAttendance', async (req, res) => {
   const { employee_id, date, status, color } = req.body;
 
@@ -105,17 +120,34 @@ app.post('/addAttendance', async (req, res) => {
   }
 
   try {
-    const query = `
-      INSERT INTO attendance (employee_id, date, status, color)
-      VALUES ($1, $2, $3, $4)
+    // Lấy lương từ bảng salaries
+    const salaryQuery = 'SELECT salary FROM salaries WHERE employee_id = $1 LIMIT 1';
+    const salaryResult = await client.query(salaryQuery, [employee_id]);
+    const salary = salaryResult.rows.length > 0 ? salaryResult.rows[0].salary : 0;
+
+    // Tính toán salaryinday dựa trên status
+    let salaryinday = 0;
+    if (status === 'Đủ') {
+      salaryinday = salary;
+    } else if (status === 'Nửa') {
+      salaryinday = salary / 2;
+    } else if (status === 'Vắng') {
+      salaryinday = 0;
+    }
+
+    // Thêm bản ghi vào attendance
+    const insertQuery = `
+      INSERT INTO attendance (employee_id, date, status, color, salaryinday)
+      VALUES ($1, $2, $3, $4, $5)
     `;
-    await client.query(query, [employee_id, date, status, color]);
+    await client.query(insertQuery, [employee_id, date, status, color, salaryinday]);
     res.status(200).json({ message: 'Attendance added successfully' });
   } catch (err) {
     console.error('Error adding attendance', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 
 app.post('/aeas', async (req, res) => {
   const { fullName, phoneNumber, password, idNumber, dob, address, payrollType, salary, currency, admin_id } = req.body;
