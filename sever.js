@@ -80,9 +80,6 @@ app.get('/dayscreen', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-
-
-
 app.put('/updateAttendance', async (req, res) => {
   const { employee_id, date, status, color } = req.body;
 
@@ -156,7 +153,6 @@ app.post('/addAttendance', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-
 app.post('/aeas', async (req, res) => {
   const { fullName, phoneNumber, password, idNumber, dob, address, payrollType, salary, currency, admin_id } = req.body;
 
@@ -199,11 +195,6 @@ app.post('/aeas', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-
-
-
-
-
 app.post('/login', async (req, res) => {
   const { phoneNumber, password } = req.body;
 
@@ -449,6 +440,35 @@ app.post('/refreshbalance', async (req, res) => {
       await client.query('ROLLBACK');
       console.error('Error updating balance:', error);
       res.status(500).send('Internal Server Error');
+  }
+});
+app.post('/logine', async (req, res) => {
+  const { phoneNumber, password } = req.body;
+
+  if (!phoneNumber || !password) {
+    return res.status(400).json({ error: 'Phone number and password are required' });
+  }
+
+  try {
+    const query = 'SELECT * FROM employees WHERE phone = $1';
+    const result = await client.query(query, [phoneNumber]);
+
+    if (result.rows.length === 0) {
+      // Return a generic message to avoid revealing phone number existence
+      return res.status(401).json({ error: 'Invalid phone number or password' });
+    }
+
+    const employee = result.rows[0];
+
+    // Directly compare plain text passwords
+    if (password !== employee.password) {
+      return res.status(401).json({ error: 'Invalid phone number or password' });
+    }
+
+    res.status(200).json({ message: 'Login successful', employee });
+  } catch (err) {
+    console.error('Error logging in:', err.message);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
