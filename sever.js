@@ -471,6 +471,34 @@ app.post('/logine', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+app.post('/addAttendancefromemployee', async (req, res) => {
+  const { employee_id, date, status = 'Đủ', color = 'green' } = req.body;
+
+  if (!employee_id || !date) {
+    return res.status(400).json({ error: 'Invalid data' });
+  }
+
+  try {
+    // Lấy lương từ bảng salaries
+    const salaryQuery = 'SELECT salary FROM salaries WHERE employee_id = $1 LIMIT 1';
+    const salaryResult = await client.query(salaryQuery, [employee_id]);
+    const salary = salaryResult.rows.length > 0 ? salaryResult.rows[0].salary : 0;
+
+    // Sử dụng salary làm salaryinday
+    const salaryinday = salary;
+
+    // Thêm bản ghi vào attendance
+    const insertQuery = `
+      INSERT INTO attendance (employee_id, date, status, color, salaryinday)
+      VALUES ($1, $2, $3, $4, $5)
+    `;
+    await client.query(insertQuery, [employee_id, date, status, color, salaryinday]);
+    res.status(200).json({ message: 'Attendance added successfully' });
+  } catch (err) {
+    console.error('Error adding attendance', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
