@@ -472,29 +472,33 @@ app.post('/logine', async (req, res) => {
 
     console.log('Password match for employee ID:', employee.id);
 
-    // Check if attendance for today already exists
-    const currentDate = new Date().toISOString().split('T')[0]; // Format YYYY-MM-DD
-    console.log('Current date for attendance check:', currentDate);
+    // Get current date in Vietnam timezone (without time)
+    const vietnamTime = new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" });
+    const currentDateVN = new Date(vietnamTime).toISOString().split('T')[0];
+    console.log('Current date in Vietnam timezone:', currentDateVN);
 
-    const attendanceQuery = 'SELECT * FROM attendance WHERE employee_id = $1 AND date = $2';
-    console.log('Executing query to check attendance for employee ID:', employee.id);
-    const attendanceResult = await client.query(attendanceQuery, [employee.id, currentDate]);
+    // Query to get today's attendance data for the employee
+    const attendanceQuery = `
+      SELECT status, TO_CHAR(date, 'YYYY-MM-DD') AS date 
+      FROM attendance 
+      WHERE employee_id = $1 
+        AND TO_CHAR(date, 'YYYY-MM-DD') = $2
+    `;
+    console.log('Executing query to get today\'s attendance data for employee ID:', employee.id);
+    const attendanceResult = await client.query(attendanceQuery, [employee.id, currentDateVN]);
 
-    if (attendanceResult.rows.length > 0) {
-      console.log('Attendance already recorded for employee ID:', employee.id, 'on date:', currentDate);
-      return res.status(200).json({ 
-        message: 'Already checked in for today', 
-        navigateTo: 'AttendancePage2', 
-        employee: employee // Include employee data for future use
-      });
-    }
+    // Format date as string in response
+    const attendanceData = attendanceResult.rows.map(row => ({
+      ...row,
+      date: row.date // Ensure date is already a string in the desired format
+    }));
+    console.log('Today\'s attendance data for employee ID:', employee.id, attendanceData);
 
-    console.log('No attendance record found for employee ID:', employee.id, 'on date:', currentDate);
-    // If attendance does not exist, return success with the correct page
+    // Return success with today's attendance data
     res.status(200).json({ 
       message: 'Login successful', 
-      navigateTo: 'AttendancePage1', 
-      employee: employee // Include employee data for future use
+      employee: employee, // Include employee data for future use
+      attendance: attendanceData // Include today's attendance data
     });
 
   } catch (err) {
