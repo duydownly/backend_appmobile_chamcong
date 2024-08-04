@@ -535,6 +535,40 @@ app.post('/addAttendancefromemployee', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+app.put('/Updateattendancetohalf', async (req, res) => {
+  const { employee_id, date, status = 'Nửa', color = 'yellow' } = req.body;
+
+  if (!employee_id || !date) {
+    return res.status(400).json({ error: 'Invalid data' });
+  }
+
+  try {
+    // Get salary from the salaries table
+    const salaryQuery = 'SELECT salary FROM salaries WHERE employee_id = $1 LIMIT 1';
+    const salaryResult = await client.query(salaryQuery, [employee_id]);
+    const salary = salaryResult.rows.length > 0 ? salaryResult.rows[0].salary : 0;
+
+    const salaryinday = salary / 2;
+
+    // Update the attendance record
+    const updateQuery = `
+      UPDATE attendance
+      SET status = $3, color = $4, salaryinday = $5
+      WHERE employee_id = $1 AND date = $2
+    `;
+    const result = await client.query(updateQuery, [employee_id, date, status, color, salaryinday]);
+
+    if (result.rowCount === 0) {
+      // No rows were updated, which means the record might not exist
+      return res.status(404).json({ error: 'Attendance record not found' });
+    }
+
+    res.status(200).json({ message: 'Attendance updated successfully' });
+  } catch (err) {
+    console.error('Error updating attendance', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
