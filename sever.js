@@ -442,49 +442,46 @@ app.post('/refreshbalance', async (req, res) => {
       res.status(500).send('Internal Server Error');
   }
 });
-const express = require('express');
-const bodyParser = require('body-parser');
-const { Client } = require('pg'); // Assuming you're using PostgreSQL
-
-const app = express();
-app.use(bodyParser.json());
-
-// Set up the PostgreSQL client
-const client = new Client({
-  connectionString: process.env.DATABASE_URL, // Ensure you have this environment variable set
-});
-client.connect();
-
 app.post('/logine', async (req, res) => {
   const { phoneNumber, password } = req.body;
 
   if (!phoneNumber || !password) {
+    console.log('Error: Phone number or password is missing');
     return res.status(400).json({ error: 'Phone number and password are required' });
   }
 
   try {
     // Query to get the employee by phone number
     const employeeQuery = 'SELECT * FROM employees WHERE phone = $1';
+    console.log('Executing query to find employee by phone number:', phoneNumber);
     const employeeResult = await client.query(employeeQuery, [phoneNumber]);
 
     if (employeeResult.rows.length === 0) {
+      console.log('No employee found with phone number:', phoneNumber);
       return res.status(401).json({ error: 'Invalid phone number or password' });
     }
 
     const employee = employeeResult.rows[0];
+    console.log('Employee found:', employee);
 
     // Directly compare plain text passwords
     if (password !== employee.password) {
+      console.log('Password mismatch for employee ID:', employee.id);
       return res.status(401).json({ error: 'Invalid phone number or password' });
     }
 
+    console.log('Password match for employee ID:', employee.id);
+
     // Check if attendance for today already exists
     const currentDate = new Date().toISOString().split('T')[0]; // Format YYYY-MM-DD
-    const attendanceQuery = 'SELECT * FROM attendances WHERE employee_id = $1 AND date = $2';
+    console.log('Current date for attendance check:', currentDate);
+
+    const attendanceQuery = 'SELECT * FROM attendance WHERE employee_id = $1 AND date = $2';
+    console.log('Executing query to check attendance for employee ID:', employee.id);
     const attendanceResult = await client.query(attendanceQuery, [employee.id, currentDate]);
 
     if (attendanceResult.rows.length > 0) {
-      // Attendance already recorded
+      console.log('Attendance already recorded for employee ID:', employee.id, 'on date:', currentDate);
       return res.status(200).json({ 
         message: 'Already checked in for today', 
         navigateTo: 'AttendancePage2', 
@@ -492,10 +489,11 @@ app.post('/logine', async (req, res) => {
       });
     }
 
+    console.log('No attendance record found for employee ID:', employee.id, 'on date:', currentDate);
     // If attendance does not exist, return success with the correct page
     res.status(200).json({ 
       message: 'Login successful', 
-      navigateTo: 'Welcome', 
+      navigateTo: 'AttendancePage1', 
       employee: employee // Include employee data for future use
     });
 
@@ -503,12 +501,6 @@ app.post('/logine', async (req, res) => {
     console.error('Error logging in:', err.message);
     res.status(500).json({ error: 'Internal Server Error' });
   }
-});
-
-// Start the server
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
 });
 
 app.post('/addAttendancefromemployee', async (req, res) => {
