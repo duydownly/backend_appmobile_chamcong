@@ -442,6 +442,19 @@ app.post('/refreshbalance', async (req, res) => {
       res.status(500).send('Internal Server Error');
   }
 });
+const express = require('express');
+const bodyParser = require('body-parser');
+const { Client } = require('pg'); // Assuming you're using PostgreSQL
+
+const app = express();
+app.use(bodyParser.json());
+
+// Set up the PostgreSQL client
+const client = new Client({
+  connectionString: process.env.DATABASE_URL, // Ensure you have this environment variable set
+});
+client.connect();
+
 app.post('/logine', async (req, res) => {
   const { phoneNumber, password } = req.body;
 
@@ -450,27 +463,54 @@ app.post('/logine', async (req, res) => {
   }
 
   try {
-    const query = 'SELECT * FROM employees WHERE phone = $1';
-    const result = await client.query(query, [phoneNumber]);
+    // Query to get the employee by phone number
+    const employeeQuery = 'SELECT * FROM employees WHERE phone = $1';
+    const employeeResult = await client.query(employeeQuery, [phoneNumber]);
 
-    if (result.rows.length === 0) {
-      // Return a generic message to avoid revealing phone number existence
+    if (employeeResult.rows.length === 0) {
       return res.status(401).json({ error: 'Invalid phone number or password' });
     }
 
-    const employee = result.rows[0];
+    const employee = employeeResult.rows[0];
 
     // Directly compare plain text passwords
     if (password !== employee.password) {
       return res.status(401).json({ error: 'Invalid phone number or password' });
     }
 
-    res.status(200).json({ message: 'Login successful', employee });
+    // Check if attendance for today already exists
+    const currentDate = new Date().toISOString().split('T')[0]; // Format YYYY-MM-DD
+    const attendanceQuery = 'SELECT * FROM attendances WHERE employee_id = $1 AND date = $2';
+    const attendanceResult = await client.query(attendanceQuery, [employee.id, currentDate]);
+
+    if (attendanceResult.rows.length > 0) {
+      // Attendance already recorded
+      return res.status(200).json({ 
+        message: 'Already checked in for today', 
+        navigateTo: 'AttendancePage2', 
+        employee: employee // Include employee data for future use
+      });
+    }
+
+    // If attendance does not exist, return success with the correct page
+    res.status(200).json({ 
+      message: 'Login successful', 
+      navigateTo: 'Welcome', 
+      employee: employee // Include employee data for future use
+    });
+
   } catch (err) {
     console.error('Error logging in:', err.message);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
+// Start the server
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
+
 app.post('/addAttendancefromemployee', async (req, res) => {
   const { employee_id, date, status = 'Đủ', color = 'green' } = req.body;
 
