@@ -553,7 +553,7 @@ app.put('/Updateattendancetohalf', async (req, res) => {
     // Update the attendance record
     const updateQuery = `
       UPDATE attendance
-      SET status = $3, color = $4, salaryinday = $5
+      SET status = $3, color = $4, salaryinday = $5, check_out_time = now() + interval '07:00:00'
       WHERE employee_id = $1 AND date = $2
     `;
     const result = await client.query(updateQuery, [employee_id, date, status, color, salaryinday]);
@@ -569,6 +569,41 @@ app.put('/Updateattendancetohalf', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
+app.get('/dataforemployeeattendance', async (req, res) => {
+  const { employee_id } = req.query;
+
+  if (!employee_id) {
+    return res.status(400).json({ error: 'Employee ID is required' });
+  }
+
+  try {
+    const query = `
+      SELECT 
+          TO_CHAR(check_in_time AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD HH24:MI:SS') AS check_in_time_vn,
+          TO_CHAR(check_out_time AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD HH24:MI:SS') AS check_out_time_vn,
+          (SELECT COUNT(*)
+           FROM attendance AS sub
+           WHERE sub.employee_id = $1
+             AND DATE_TRUNC('month', sub.check_in_time) = DATE_TRUNC('month', CURRENT_DATE)
+             AND status = 'Đủ') AS totalwages
+      FROM attendance
+      WHERE employee_id = $1
+        AND DATE(check_in_time) = CURRENT_DATE
+      GROUP BY 
+          check_in_time, check_out_time;
+    `;
+
+    const result = await client.query(query, [employee_id]);
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error executing query', err.stack);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
