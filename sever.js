@@ -273,7 +273,7 @@ app.get('/employees', async (req, res) => {
           address: row.address,
           admin_id: row.admin_id,
           type: row.type === 'Tháng' ? 'Tháng' : 'Ngày', // Đảm bảo type phù hợp với output mong muốn
-          amount: parseFloat(row.salary), // Đảm bảo salary là số
+          salary: parseFloat(row.salary), // Đảm bảo salary là số
           currency: row.currency        };
       }
 
