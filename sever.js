@@ -626,6 +626,38 @@ WHERE
   }
 });
 
+app.get('/informationscheduleemployees', async (req, res) => {
+  const employeeId = parseInt(req.query.employee_id, 10);
+
+  if (isNaN(employeeId)) {
+      return res.status(400).json({ error: 'Invalid employee_id' });
+  }
+
+  try {
+      const query = `
+          SELECT
+              a.date AS date,
+              a.status,
+              COALESCE(ap.amount, 0) AS amount
+          FROM
+              attendance a
+          LEFT JOIN
+              advancespayment ap
+          ON
+              a.date = ap.date AND a.employee_id = ap.employee_id
+          WHERE
+              a.employee_id = $1
+          ORDER BY
+              a.date;
+      `;
+
+      const result = await client.query(query, [employeeId]);
+      res.json(result.rows);
+  } catch (err) {
+      console.error('Error executing query', err.stack);
+      res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
