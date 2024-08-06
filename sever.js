@@ -582,37 +582,37 @@ app.get('/informationemployeeattendance', async (req, res) => {
 
       // Câu truy vấn SQL
       const query = `
-          WITH MonthlyWorkingDays AS (
-              SELECT 
-                  employee_id,
-                  SUM(
-                      CASE 
-                          WHEN status = 'Đủ' THEN 1
-                          WHEN status = 'Nửa' THEN 0.5
-                          ELSE 0
-                      END
-                  ) AS total_working_days
-              FROM 
-                  attendance
-              WHERE 
-                  EXTRACT(MONTH FROM NOW() + INTERVAL '7 hours') = EXTRACT(MONTH FROM date) AND
-                  EXTRACT(YEAR FROM NOW() + INTERVAL '7 hours') = EXTRACT(YEAR FROM date)
-              GROUP BY 
-                  employee_id
-          )
-          SELECT 
-              a.check_in_time,
-              a.check_out_time,
-              m.total_working_days AS working_days
-          FROM 
-              attendance a
-          JOIN 
-              MonthlyWorkingDays m
-          ON 
-              a.employee_id = m.employee_id
-          WHERE 
-              a.employee_id = $1 AND
-              DATE(a.date) = DATE(NOW() + INTERVAL '7 hours');
+WITH MonthlyWorkingDays AS (
+    SELECT 
+        employee_id,
+        SUM(
+            CASE 
+                WHEN status = 'Đủ' THEN 1
+                WHEN status = 'Nửa' THEN 0.5
+                ELSE 0
+            END
+        ) AS total_working_days
+    FROM 
+        attendance
+    WHERE 
+        EXTRACT(MONTH FROM NOW() + INTERVAL '7 hours') = EXTRACT(MONTH FROM date) AND
+        EXTRACT(YEAR FROM NOW() + INTERVAL '7 hours') = EXTRACT(YEAR FROM date)
+    GROUP BY 
+        employee_id
+)
+SELECT 
+    TO_CHAR(a.check_in_time, 'HH24:MI:SS') AS check_in_time,
+    TO_CHAR(a.check_out_time, 'HH24:MI:SS') AS check_out_time,
+    m.total_working_days AS working_days
+FROM 
+    attendance a
+JOIN 
+    MonthlyWorkingDays m
+ON 
+    a.employee_id = m.employee_id
+WHERE 
+    a.employee_id = $1 AND
+    DATE(a.date) = DATE(NOW() + INTERVAL '7 hours');
       `;
 
       // Thực thi câu truy vấn
