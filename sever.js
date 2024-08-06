@@ -601,9 +601,9 @@ WITH MonthlyWorkingDays AS (
         employee_id
 )
 SELECT 
-    TO_CHAR(a.check_in_time, 'HH24:MI:SS') AS check_in_time,
-    TO_CHAR(a.check_out_time, 'HH24:MI:SS') AS check_out_time,
-    m.total_working_days AS working_days
+    TO_CHAR(a.check_in_time, 'HH24:MI:SS') AS checkintime,
+    TO_CHAR(a.check_out_time, 'HH24:MI:SS') AS checkouttime,
+    m.total_working_days AS totalworkday
 FROM 
     attendance a
 JOIN 
