@@ -630,34 +630,45 @@ app.get('/informationscheduleemployees', async (req, res) => {
   const employeeId = parseInt(req.query.employee_id, 10);
 
   if (isNaN(employeeId)) {
-      return res.status(400).json({ error: 'Invalid employee_id' });
+    return res.status(400).json({ error: 'Invalid employee_id' });
   }
 
   try {
-      const query = `
-          SELECT
-              TO_CHAR(a.date, 'YYYY-MM-DD') AS date,
-              a.status,
-              COALESCE(ap.amount, 0) AS amount
-          FROM
-              attendance a
-          LEFT JOIN
-              advancespayment ap
-          ON
-              a.date = ap.date AND a.employee_id = ap.employee_id
-          WHERE
-              a.employee_id = $1
-          ORDER BY
-              a.date;
-      `;
+    const query = `
+      SELECT
+        TO_CHAR(a.date, 'YYYY-MM-DD') AS date,
+        a.status,
+        COALESCE(ap.amount, 0) AS amount,
+        a.color
+      FROM
+        attendance a
+      LEFT JOIN
+        advancespayment ap
+      ON
+        a.date = ap.date AND a.employee_id = ap.employee_id
+      WHERE
+        a.employee_id = $1
+      ORDER BY
+        a.date;
+    `;
 
-      const result = await client.query(query, [employeeId]);
-      res.json(result.rows);
+    const result = await client.query(query, [employeeId]);
+    
+    // Map dữ liệu để phù hợp với định dạng yêu cầu mà không có trường employee_id
+    const formattedResult = result.rows.map(row => ({
+      date: row.date,
+      status: row.status,
+      color: row.color,
+      amount: row.amount
+    }));
+
+    res.json(formattedResult);
   } catch (err) {
-      console.error('Error executing query', err.stack);
-      res.status(500).json({ error: 'Internal Server Error' });
+    console.error('Error executing query', err.stack);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
