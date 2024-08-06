@@ -508,9 +508,9 @@ app.post('/logine', async (req, res) => {
 });
 
 app.post('/addAttendancefromemployee', async (req, res) => {
-  const { employee_id, date, status = 'Đủ', color = 'green' } = req.body;
+  const { employee_id, status = 'Đủ', color = 'green' } = req.body;
 
-  if (!employee_id || !date) {
+  if (!employee_id) {
     return res.status(400).json({ error: 'Invalid data' });
   }
 
@@ -525,16 +525,17 @@ app.post('/addAttendancefromemployee', async (req, res) => {
 
     // Thêm bản ghi vào attendance
     const insertQuery = `
-      INSERT INTO attendance (employee_id, date, status, color, salaryinday)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO attendance (employee_id, status, color, salaryinday)
+      VALUES ($1, $2, $3, $4)
     `;
-    await client.query(insertQuery, [employee_id, date, status, color, salaryinday]);
+    await client.query(insertQuery, [employee_id, status, color, salaryinday]);
     res.status(200).json({ message: 'Attendance added successfully' });
   } catch (err) {
     console.error('Error adding attendance', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 app.put('/Updateattendancetohalf', async (req, res) => {
   const { employee_id, date, status = 'Nửa', color = 'yellow' } = req.body;
 
@@ -570,39 +571,60 @@ app.put('/Updateattendancetohalf', async (req, res) => {
   }
 });
 
-app.get('/dataforemployeeattendance', async (req, res) => {
-  const { employee_id } = req.query;
-
-  if (!employee_id) {
-    return res.status(400).json({ error: 'Employee ID is required' });
-  }
-
+app.get('/informationemployeeattendance', async (req, res) => {
   try {
-    const query = `
-      SELECT 
-          TO_CHAR(check_in_time AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD HH24:MI:SS') AS check_in_time_vn,
-          TO_CHAR(check_out_time AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD HH24:MI:SS') AS check_out_time_vn,
-          (SELECT COUNT(*)
-           FROM attendance AS sub
-           WHERE sub.employee_id = $1
-             AND DATE_TRUNC('month', sub.check_in_time) = DATE_TRUNC('month', CURRENT_DATE)
-             AND status = 'Đủ') AS totalwages
-      FROM attendance
-      WHERE employee_id = $1
-        AND DATE(check_in_time) = CURRENT_DATE
-      GROUP BY 
-          check_in_time, check_out_time;
-    `;
+      // Lấy employee ID từ query parameters
+      const employeeId = req.query.employee_id;
 
-    const result = await client.query(query, [employee_id]);
+      if (!employeeId) {
+          return res.status(400).json({ error: 'Employee ID is required' });
+      }
 
-    res.json(result.rows);
-  } catch (err) {
-    console.error('Error executing query', err.stack);
-    res.status(500).json({ error: 'Internal Server Error' });
+      // Câu truy vấn SQL
+      const query = `
+          WITH MonthlyWorkingDays AS (
+              SELECT 
+                  employee_id,
+                  SUM(
+                      CASE 
+                          WHEN status = 'Đủ' THEN 1
+                          WHEN status = 'Nửa' THEN 0.5
+                          ELSE 0
+                      END
+                  ) AS total_working_days
+              FROM 
+                  attendance
+              WHERE 
+                  EXTRACT(MONTH FROM NOW() + INTERVAL '7 hours') = EXTRACT(MONTH FROM date) AND
+                  EXTRACT(YEAR FROM NOW() + INTERVAL '7 hours') = EXTRACT(YEAR FROM date)
+              GROUP BY 
+                  employee_id
+          )
+          SELECT 
+              a.check_in_time,
+              a.check_out_time,
+              m.total_working_days AS working_days
+          FROM 
+              attendance a
+          JOIN 
+              MonthlyWorkingDays m
+          ON 
+              a.employee_id = m.employee_id
+          WHERE 
+              a.employee_id = $1 AND
+              DATE(a.date) = DATE(NOW() + INTERVAL '7 hours');
+      `;
+
+      // Thực thi câu truy vấn
+      const result = await client.query(query, [employeeId]);
+
+      // Gửi kết quả dưới dạng JSON
+      res.json(result.rows);
+  } catch (error) {
+      console.error('Error executing query', error);
+      res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-
 
 
 app.listen(PORT, () => {
