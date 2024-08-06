@@ -636,7 +636,7 @@ app.get('/informationscheduleemployees', async (req, res) => {
   try {
       const query = `
           SELECT
-              a.date AS date,
+              TO_CHAR(a.date, 'YYYY-MM-DD') AS date,
               a.status,
               COALESCE(ap.amount, 0) AS amount
           FROM
