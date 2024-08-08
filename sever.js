@@ -691,7 +691,8 @@ app.get('/employeestatuscurrendate', async (req, res) => {
     if (result.rows.length > 0) {
       res.json({ status: result.rows[0].status });
     } else {
-      res.status(404).json({ error: 'No attendance record found for this employee on the specified date' });
+      // Trả về 'nodata' nếu không có bản ghi nào cho ngày hôm nay
+      res.json({ status: 'nodata' });
     }
   } catch (error) {
     console.error('Error executing query', error);
