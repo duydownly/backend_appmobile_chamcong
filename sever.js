@@ -669,6 +669,35 @@ app.get('/informationscheduleemployees', async (req, res) => {
   }
 });
 
+app.get('/employeestatuscurrendate', async (req, res) => {
+  const employee_id = req.query.employee_id; // Sửa đổi để sử dụng `employee_id`
+
+  if (!employee_id) {
+    return res.status(400).json({ error: 'Employee ID is required' });
+  }
+
+  try {
+    const query = `
+      SELECT status
+      FROM attendance
+      WHERE employee_id = $1
+      AND date = date(now() + '07:00:00');
+    `;
+    
+    const values = [employee_id];
+
+    const result = await client.query(query, values);
+
+    if (result.rows.length > 0) {
+      res.json({ status: result.rows[0].status });
+    } else {
+      res.status(404).json({ error: 'No attendance record found for this employee on the specified date' });
+    }
+  } catch (error) {
+    console.error('Error executing query', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
