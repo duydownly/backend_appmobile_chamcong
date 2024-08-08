@@ -627,11 +627,12 @@ WHERE
 });
 
 app.get('/informationscheduleemployees', async (req, res) => {
-  const employeeId = parseInt(req.query.employee_id, 10);
+  const employeeId = req.query.employee_id;
 
-  if (isNaN(employeeId)) {
-    return res.status(400).json({ error: 'Invalid employee_id' });
-  }
+  if (!employeeId) {
+    return res.status(400).json({ error: 'Employee ID is required' });
+}
+
 
   try {
     const query = `
