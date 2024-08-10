@@ -1,9 +1,9 @@
 const cron = require('node-cron');
 const { client } = require('./db'); // Yêu cầu client từ db.js
 
-// Lên lịch công việc để chạy vào lúc 6:00 PM giờ Việt Nam mỗi ngày
-cron.schedule('0 11 * * *', async () => {  // 6:00 PM VN là 11:00 AM UTC
-  console.log('Running cron job at 6:00 PM VN time');
+// Lên lịch công việc để chạy vào lúc 6:30 PM giờ Việt Nam mỗi ngày
+cron.schedule('15 11 * * *', async () => {  // 6:30 PM VN là 11:30 AM UTC
+  console.log('Running cron job at 6:30 PM VN time');
 
   const query = `
     INSERT INTO attendance (employee_id, status, color, date)
