@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { client, connectDB } = require('./db');
+require('./cron-job'); // Yêu cầu cron-job.js để khởi động cron job
 
 const app = express();
 const PORT = process.env.PORT || 5000;
