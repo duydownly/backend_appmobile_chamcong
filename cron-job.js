@@ -2,7 +2,7 @@ const cron = require('node-cron');
 const { client } = require('./db'); // Yêu cầu client từ db.js
 
 // Lên lịch công việc để chạy vào lúc 6:15 PM giờ Việt Nam mỗi ngày
-cron.schedule('59 23 * * *', async () => {  // Chạy mỗi phút
+cron.schedule('10 15 * * *', async () => {  // Chạy mỗi phút
     console.log('Running cron job every minute');
   
 
