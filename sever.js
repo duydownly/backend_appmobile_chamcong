@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { client, connectDB } = require('./db');
-require('./cron-job'); // Yêu cầu cron-job.js để khởi động cron job
+// require('./cron-job'); // Yêu cầu cron-job.js để khởi động cron job
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -699,6 +699,32 @@ app.get('/employeestatuscurrendate', async (req, res) => {
   } catch (error) {
     console.error('Error executing query', error);
     res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+app.post('/autoaddattendancestatus', async (req, res) => {
+  console.log('Running API endpoint /autoaddattendancestatus');
+  
+  const query = `
+    INSERT INTO attendance (employee_id, status, color, date)
+    SELECT e.id, 'Vắng', 'red', TO_CHAR(NOW() + INTERVAL '07:00:00', 'YYYY-MM-DD')::date
+    FROM employees e
+    WHERE NOT EXISTS (
+      SELECT 1
+      FROM attendance a
+      WHERE a.employee_id = e.id
+      AND a.date = TO_CHAR(NOW() + INTERVAL '07:00:00', 'YYYY-MM-DD')::date
+      AND a.status IS NOT NULL
+      AND a.color IS NOT NULL
+    );
+  `;
+
+  try {
+    await client.query(query);
+    console.log('Query executed successfully');
+    res.status(200).send('Attendance status added successfully');
+  } catch (err) {
+    console.error('Error executing query', err.stack);
+    res.status(500).send('Error executing query');
   }
 });
 
