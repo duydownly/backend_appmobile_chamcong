@@ -1,6 +1,6 @@
 const cron = require('node-cron');
 const { client } = require('./db'); // Yêu cầu client từ db.js
-cron.schedule('13 30 * * *', async () => { 
+cron.schedule('00 14 * * *', async () => { 
   console.log('Running cron job every minute');
   const query = `
     INSERT INTO attendance (employee_id, status, color, date)
