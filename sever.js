@@ -243,6 +243,7 @@ app.get('/employees', async (req, res) => {
         e.birth_date,
         e.address,
         e.admin_id,
+        e.active_status, -- Thêm trường active_status
         s.type,
         s.salary,
         s.currency
@@ -254,7 +255,6 @@ app.get('/employees', async (req, res) => {
 
     const result = await client.query(query, [admin_id]);
 
-    // Định dạng kết quả để phù hợp với cấu trúc mong muốn
     const formattedResults = [];
     let currentEmployee = null;
 
@@ -270,17 +270,17 @@ app.get('/employees', async (req, res) => {
           phone: row.phone,
           password: row.password,
           cmnd: row.cmnd,
-          birth_date: row.birth_date, // Định dạng ngày thành YYYY-MM-DD
+          birth_date: row.birth_date,
           address: row.address,
           admin_id: row.admin_id,
-          type: row.type === 'Tháng' ? 'Tháng' : 'Ngày', // Đảm bảo type phù hợp với output mong muốn
-          salary: parseFloat(row.salary), // Đảm bảo salary là số
-          currency: row.currency        };
+          active_status: row.active_status, // Lấy giá trị active_status
+          type: row.type === 'Tháng' ? 'Tháng' : 'Ngày',
+          salary: parseFloat(row.salary),
+          currency: row.currency
+        };
       }
+    });
 
-     });
-
-    // Đẩy employee cuối cùng vào mảng kết quả
     if (currentEmployee) {
       formattedResults.push(currentEmployee);
     }
