@@ -640,7 +640,7 @@ SELECT
   TO_CHAR(COALESCE(a.date, aaa.accept_date), 'YYYY-MM-DD') AS date,
   a.status AS attendance_status,
   a.color,
-  COALESCE(SUM(aaa.amount), 0) AS amount -- Tính tổng số tiền ứng trong ngày
+  COALESCE(SUM(aaa.amount), 0) AS total_amount -- Tính tổng số tiền ứng trong ngày
 FROM
   attendance a
 FULL OUTER JOIN
