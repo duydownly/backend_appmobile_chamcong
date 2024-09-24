@@ -632,35 +632,38 @@ app.get('/informationscheduleemployees', async (req, res) => {
 
   if (!employeeId) {
     return res.status(400).json({ error: 'Employee ID is required' });
-}
-
+  }
 
   try {
     const query = `
       SELECT
-        TO_CHAR(a.date, 'YYYY-MM-DD') AS date,
-        a.status,
-        COALESCE(ap.amount, 0) AS amount,
-        a.color
+        TO_CHAR(COALESCE(a.date, aaa.accept_date), 'YYYY-MM-DD') AS date,
+        a.status AS attendance_status,
+        a.color,
+        TO_CHAR(aaa.accept_date, 'YYYY-MM-DD') AS accept_date,
+        COALESCE(aaa.amount, 0) AS amount
       FROM
         attendance a
-      LEFT JOIN
-        advancespayment ap
+      FULL OUTER JOIN
+        advance_amount_alert aaa
       ON
-        a.date = ap.date AND a.employee_id = ap.employee_id
+        a.employee_id = aaa.employee_id
+      AND a.date = aaa.accept_date
       WHERE
-        a.employee_id = $1
+        (a.employee_id = $1 OR aaa.employee_id = $1)
+      AND (aaa.status = 'Accepted' OR aaa.status IS NULL)
       ORDER BY
-        a.date;
+        date;
     `;
 
     const result = await client.query(query, [employeeId]);
-    
-    // Map dữ liệu để phù hợp với định dạng yêu cầu mà không có trường employee_id
+
+    // Map dữ liệu để trả về với định dạng cần thiết
     const formattedResult = result.rows.map(row => ({
       date: row.date,
-      status: row.status,
+      attendance_status: row.attendance_status,
       color: row.color,
+      accept_date: row.accept_date,
       amount: row.amount
     }));
 
