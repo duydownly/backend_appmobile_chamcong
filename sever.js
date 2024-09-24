@@ -636,24 +636,25 @@ app.get('/informationscheduleemployees', async (req, res) => {
 
   try {
     const query = `
-      SELECT
-        TO_CHAR(COALESCE(a.date, aaa.accept_date), 'YYYY-MM-DD') AS date,
-        a.status AS attendance_status,
-        a.color,
-        TO_CHAR(aaa.accept_date, 'YYYY-MM-DD') AS accept_date,
-        COALESCE(aaa.amount, 0) AS amount
-      FROM
-        attendance a
-      FULL OUTER JOIN
-        advance_amount_alert aaa
-      ON
-        a.employee_id = aaa.employee_id
-      AND a.date = aaa.accept_date
-      WHERE
-        (a.employee_id = $1 OR aaa.employee_id = $1)
-      AND (aaa.status = 'Accepted' OR aaa.status IS NULL)
-      ORDER BY
-        date;
+SELECT
+  TO_CHAR(COALESCE(a.date, aaa.accept_date), 'YYYY-MM-DD') AS date,
+  a.status AS attendance_status,
+  a.color,
+  COALESCE(SUM(aaa.amount), 0) AS total_amount -- Tính tổng số tiền ứng trong ngày
+FROM
+  attendance a
+FULL OUTER JOIN
+  advance_amount_alert aaa
+ON
+  a.employee_id = aaa.employee_id
+  AND a.date = aaa.accept_date
+WHERE
+  (a.employee_id = $1 OR aaa.employee_id = $1)
+  AND (aaa.status = 'Accepted' OR aaa.status IS NULL)
+GROUP BY
+  a.date, a.status, a.color, aaa.accept_date
+ORDER BY
+  date;
     `;
 
     const result = await client.query(query, [employeeId]);
