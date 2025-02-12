@@ -731,7 +731,6 @@ app.post('/autoaddattendancestatus', async (req, res) => {
     res.status(500).send('Error executing query');
   }
 });
-
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
