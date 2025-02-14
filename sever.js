@@ -751,6 +751,81 @@ app.get('/employeename', async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+app.post('/employee_advance_request', async (req, res) => {
+  const { employee_id, amount, reason } = req.body;
+
+  // Kiểm tra các trường bắt buộc
+  if (!employee_id || !amount || !reason) {
+    return res.status(400).json({ error: 'employee_id, amount, and reason are required' });
+  }
+
+  try {
+    // Thực hiện truy vấn SQL để chèn dữ liệu vào bảng advance_amount_alert
+    const query = `
+      INSERT INTO advance_amount_alert (employee_id, amount, reason)
+      VALUES ($1, $2, $3)
+    `;
+    const values = [employee_id, amount, reason];
+
+    await client.query(query, values);
+
+    // Trả về phản hồi thành công
+    res.status(201).json({ message: 'Advance request created successfully' });
+  } catch (err) {
+    console.error('Error creating advance request:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+// Admin chấp nhận yêu cầu ứng tiền
+app.put('/admin_accept_request', async (req, res) => {
+  const { id } = req.body;
+
+  if (!id) {
+    return res.status(400).json({ error: 'Request ID is required' });
+  }
+
+  try {
+    const query = `
+      UPDATE advance_amount_alert
+      SET status = 'Accept',
+          updated_at = DATE(NOW() + INTERVAL '7 hours'),
+          is_viewed_by_admin = TRUE
+      WHERE id = $1
+    `;
+    await client.query(query, [id]);
+
+    res.status(200).json({ message: 'Request accepted successfully' });
+  } catch (err) {
+    console.error('Error accepting request:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// Admin từ chối yêu cầu ứng tiền
+app.put('/admin_reject_request', async (req, res) => {
+  const { id, rejection_reason } = req.body;
+
+  if (!id || !rejection_reason) {
+    return res.status(400).json({ error: 'Request ID and rejection reason are required' });
+  }
+
+  try {
+    const query = `
+      UPDATE advance_amount_alert
+      SET status = 'Reject',
+          updated_at = DATE(NOW() + INTERVAL '7 hours'),
+          rejection_reason = $2,
+          is_viewed_by_admin = TRUE
+      WHERE id = $1
+    `;
+    await client.query(query, [id, rejection_reason]);
+
+    res.status(200).json({ message: 'Request rejected successfully' });
+  } catch (err) {
+    console.error('Error rejecting request:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
