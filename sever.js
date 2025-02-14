@@ -787,7 +787,7 @@ app.put('/admin_accept_request', async (req, res) => {
   try {
     const query = `
       UPDATE advance_amount_alert
-      SET status = 'Accept',
+      SET status = 'Accepted',
           updated_at = DATE(NOW() + INTERVAL '7 hours'),
           is_viewed_by_admin = TRUE
       WHERE id = $1
