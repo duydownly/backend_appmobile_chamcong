@@ -838,6 +838,7 @@ app.get('/notification_advance_admin', async (req, res) => {
       SELECT 
         aaa.id, 
         aaa.employee_id, 
+        e.name,  -- Lấy thêm tên từ bảng employees
         aaa.amount, 
         aaa.status, 
         aaa.reason, 
