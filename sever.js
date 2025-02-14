@@ -637,7 +637,7 @@ app.get('/informationscheduleemployees', async (req, res) => {
   try {
     const query = `
 SELECT
-  TO_CHAR(COALESCE(a.date, aaa.accept_date), 'YYYY-MM-DD') AS date,
+  TO_CHAR(COALESCE(a.date, aaa.updated_at), 'YYYY-MM-DD') AS date,
   a.status AS attendance_status,
   a.color,
   COALESCE(SUM(aaa.amount), 0) AS amount -- Tính tổng số tiền ứng trong ngày
@@ -647,12 +647,12 @@ FULL OUTER JOIN
   advance_amount_alert aaa
 ON
   a.employee_id = aaa.employee_id
-  AND a.date = aaa.accept_date
+  AND a.date = aaa.updated_at
 WHERE
   (a.employee_id = $1 OR aaa.employee_id = $1)
   AND (aaa.status = 'Accepted' OR aaa.status IS NULL)
 GROUP BY
-  a.date, a.status, a.color, aaa.accept_date
+  a.date, a.status, a.color, aaa.updated_at
 ORDER BY
   date;
     `;
