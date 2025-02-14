@@ -827,7 +827,7 @@ app.put('/admin_reject_request', async (req, res) => {
   }
 });
 app.get('/notification_advance_admin', async (req, res) => {
-  const adminId = req.query.admin_id; // Lấy admin_id từ query parameter
+  const adminId = req.query.admin_id;
 
   if (!adminId) {
     return res.status(400).json({ error: 'admin_id is required' });
@@ -841,8 +841,8 @@ app.get('/notification_advance_admin', async (req, res) => {
         aaa.amount, 
         aaa.status, 
         aaa.reason, 
-        aaa.created_at, 
-        aaa.updated_at, 
+        aaa.created_at::VARCHAR AS created_at, 
+        aaa.updated_at::VARCHAR AS updated_at, 
         aaa.is_viewed_by_admin, 
         aaa.rejection_reason
       FROM 
@@ -853,14 +853,15 @@ app.get('/notification_advance_admin', async (req, res) => {
         e.admin_id = $1;
     `;
 
-    // Sử dụng client.query để thực thi truy vấn
     const result = await client.query(query, [adminId]);
+
     res.status(200).json(result.rows);
   } catch (err) {
     console.error('Error executing query', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
