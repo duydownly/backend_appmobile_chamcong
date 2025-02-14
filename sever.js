@@ -826,7 +826,41 @@ app.put('/admin_reject_request', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+app.get('/notification_advance_admin', async (req, res) => {
+  const adminId = req.query.admin_id; // Lấy admin_id từ query parameter
 
+  if (!adminId) {
+    return res.status(400).json({ error: 'admin_id is required' });
+  }
+
+  try {
+    const query = `
+      SELECT 
+        aaa.id, 
+        aaa.employee_id, 
+        aaa.amount, 
+        aaa.status, 
+        aaa.reason, 
+        aaa.created_at, 
+        aaa.updated_at, 
+        aaa.is_viewed_by_admin, 
+        aaa.rejection_reason
+      FROM 
+        advance_amount_alert aaa
+      JOIN 
+        employees e ON aaa.employee_id = e.id
+      WHERE 
+        e.admin_id = $1;
+    `;
+
+    // Sử dụng client.query để thực thi truy vấn
+    const result = await client.query(query, [adminId]);
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error('Error executing query', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
