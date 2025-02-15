@@ -427,8 +427,7 @@ total_advance AS (
     FROM 
         advance_amount_alert aaa
     WHERE 
-        aaa.status = 'Accepted' 
-        AND aaa.process = false
+        aaa.status = 'Accepted' -- Chỉ giữ lại điều kiện status
     GROUP BY 
         aaa.employee_id
 )
@@ -443,15 +442,6 @@ LEFT JOIN
     ON ts.employee_id = ta.employee_id
 WHERE 
     e.id = ts.employee_id;
-
--- Cập nhật process thành true cho các bản ghi đã xử lý
-UPDATE 
-    advance_amount_alert
-SET 
-    process = true
-WHERE 
-    status = 'Accepted' 
-    AND process = false;
       `;
 
       await client.query(query);
