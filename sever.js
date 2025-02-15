@@ -406,39 +406,39 @@ app.post('/refreshbalance', async (req, res) => {
       await client.query('BEGIN');
 
       const query = `
-      -- Tính tổng lương của nhân viên
-      WITH total_salary AS (
-          SELECT a.employee_id,
-                 SUM(a.salaryinday) AS total_salary
-          FROM attendance a
-          JOIN employees e ON a.employee_id = e.id AND a.date >= e.initiated_date AND a.date <= CURRENT_DATE
-          GROUP BY a.employee_id
-      ),
-      -- Tính tổng tiền ứng trước của nhân viên
-      total_advance AS (
-          SELECT employee_id, SUM(advance_amount) AS total_advance
-          FROM advance_amount_alert
-          WHERE status = 'Accepted'
-          GROUP BY employee_id
-      )
-      -- Cập nhật balance (lương - ứng trước)
-      UPDATE employees
-      SET balance = (
-          SELECT COALESCE(ts.total_salary, 0) - COALESCE(ta.total_advance, 0)
-          FROM total_salary ts
-          LEFT JOIN total_advance ta ON employees.id = ta.employee_id
-          WHERE employees.id = ts.employee_id
-      )
-      WHERE EXISTS (
-          SELECT 1
-          FROM total_salary ts
-          WHERE employees.id = ts.employee_id
-      );
+    -- Tính tổng lương của nhân viên
+WITH total_salary AS (
+    SELECT a.employee_id,
+           SUM(a.salaryinday) AS total_salary
+    FROM attendance a
+    JOIN employees e ON a.employee_id = e.id AND a.date >= e.initiated_date AND a.date <= CURRENT_DATE
+    GROUP BY a.employee_id
+),
+-- Tính tổng tiền ứng trước của nhân viên
+total_advance AS (
+    SELECT employee_id, SUM(amount) AS total_advance
+    FROM advance_amount_alert
+    WHERE status = 'Accepted'
+    GROUP BY employee_id
+)
+-- Cập nhật balance (lương - ứng trước)
+UPDATE employees
+SET balance = (
+    SELECT COALESCE(ts.total_salary, 0) - COALESCE(ta.total_advance, 0)
+    FROM total_salary ts
+    LEFT JOIN total_advance ta ON employees.id = ta.employee_id
+    WHERE employees.id = ts.employee_id
+)
+WHERE EXISTS (
+    SELECT 1
+    FROM total_salary ts
+    WHERE employees.id = ts.employee_id
+);
 
-      -- Cập nhật trạng thái của các bản ghi ứng trước
-      UPDATE advance_amount_alert
-      SET status = 'Processed'
-      WHERE status = 'Accepted';
+-- Cập nhật trạng thái của các bản ghi ứng trước
+UPDATE advance_amount_alert
+SET status = 'Processed'
+WHERE status = 'Accepted';
       `;
 
       await client.query(query);
