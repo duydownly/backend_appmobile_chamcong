@@ -406,43 +406,24 @@ app.post('/refreshbalance', async (req, res) => {
       await client.query('BEGIN');
 
       const query = `
--- Tính tổng lương của nhân viên
-WITH total_salary AS (
-    SELECT a.employee_id,
-           SUM(a.salaryinday) AS total_salary
-    FROM attendance a
-    JOIN employees ON a.employee_id = employees.id AND a.date >= employees.initiated_date AND a.date <= CURRENT_DATE
-    GROUP BY a.employee_id
-),
--- Tính tổng tiền ứng trước của nhân viên (chỉ các khoản chưa được xử lý)
-total_advance AS (
-    SELECT employee_id, SUM(amount) AS total_advance
-    FROM advance_amount_alert
-    WHERE status = 'Accepted' AND process = false
-    GROUP BY employee_id
-)
--- Cập nhật balance (initial_balance + lương - ứng trước)
-UPDATE employees
-SET balance = (
-    SELECT COALESCE(employees.initial_balance, 0) + COALESCE(ts.total_salary, 0) - COALESCE(ta.total_advance, 0)
-    FROM total_salary ts
-    LEFT JOIN total_advance ta ON employees.id = ta.employee_id
-    WHERE employees.id = ts.employee_id
-)
-WHERE EXISTS (
-    SELECT 1
-    FROM total_salary ts
-    WHERE employees.id = ts.employee_id
-);
-
--- Đánh dấu các khoản ứng trước đã được xử lý
-UPDATE advance_amount_alert
-SET process = true
-WHERE status = 'Accepted' AND process = false;
-
--- Cập nhật initial_balance để lưu lại số dư hiện tại (sau khi trừ tiền ứng trước)
-UPDATE employees
-SET initial_balance = balance;
+      WITH total_salary AS (
+          SELECT a.employee_id,
+                 SUM(a.salaryinday) AS total_salary
+          FROM attendance a
+          JOIN employees e ON a.employee_id = e.id AND a.date >= e.initiated_date AND a.date <= CURRENT_DATE
+          GROUP BY a.employee_id
+      )
+      UPDATE employees
+      SET balance = (
+          SELECT COALESCE(ts.total_salary, 0) AS total_salary
+          FROM total_salary ts
+          WHERE employees.id = ts.employee_id
+      )
+      WHERE EXISTS (
+          SELECT 1
+          FROM total_salary ts
+          WHERE employees.id = ts.employee_id
+      );
       `;
 
       await client.query(query);
