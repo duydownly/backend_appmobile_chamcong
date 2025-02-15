@@ -406,24 +406,61 @@ app.post('/refreshbalance', async (req, res) => {
       await client.query('BEGIN');
 
       const query = `
-      WITH total_salary AS (
-          SELECT a.employee_id,
-                 SUM(a.salaryinday) AS total_salary
-          FROM attendance a
-          JOIN employees e ON a.employee_id = e.id AND a.date >= e.initiated_date AND a.date <= CURRENT_DATE
-          GROUP BY a.employee_id
-      )
-      UPDATE employees
-      SET balance = (
-          SELECT COALESCE(ts.total_salary, 0) AS total_salary
-          FROM total_salary ts
-          WHERE employees.id = ts.employee_id
-      )
-      WHERE EXISTS (
-          SELECT 1
-          FROM total_salary ts
-          WHERE employees.id = ts.employee_id
-      );
+WITH total_salary AS (
+    SELECT 
+        a.employee_id,
+        SUM(a.salaryinday) AS total_salary
+    FROM 
+        attendance a
+    JOIN 
+        employees e 
+        ON a.employee_id = e.id 
+        AND a.date >= e.initiated_date 
+        AND a.date <= CURRENT_DATE
+    GROUP BY 
+        a.employee_id
+),
+total_advance AS (
+    SELECT 
+        aaa.employee_id,
+        COALESCE(SUM(aaa.amount), 0) AS total_advance
+    FROM 
+        advance_amount_alert aaa
+    WHERE 
+        aaa.status = 'Accepted' 
+        AND aaa.process = false
+    GROUP BY 
+        aaa.employee_id
+)
+UPDATE 
+    employees e
+SET 
+    balance = (
+        SELECT 
+            COALESCE(ts.total_salary, 0) - COALESCE(ta.total_advance, 0)
+        FROM 
+            total_salary ts
+        LEFT JOIN 
+            total_advance ta 
+            ON ts.employee_id = ta.employee_id
+        WHERE 
+            e.id = ts.employee_id
+    )
+WHERE 
+    EXISTS (
+        SELECT 1
+        FROM total_salary ts
+        WHERE e.id = ts.employee_id
+    );
+
+-- Cập nhật process thành true cho các bản ghi đã xử lý
+UPDATE 
+    advance_amount_alert
+SET 
+    process = true
+WHERE 
+    status = 'Accepted' 
+    AND process = false;
       `;
 
       await client.query(query);
