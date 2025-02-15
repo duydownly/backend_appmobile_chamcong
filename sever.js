@@ -435,23 +435,14 @@ total_advance AS (
 UPDATE 
     employees e
 SET 
-    balance = (
-        SELECT 
-            COALESCE(ts.total_salary, 0) - COALESCE(ta.total_advance, 0)
-        FROM 
-            total_salary ts
-        LEFT JOIN 
-            total_advance ta 
-            ON ts.employee_id = ta.employee_id
-        WHERE 
-            e.id = ts.employee_id
-    )
+    balance = COALESCE(ts.total_salary, 0) - COALESCE(ta.total_advance, 0)
+FROM 
+    total_salary ts
+LEFT JOIN 
+    total_advance ta 
+    ON ts.employee_id = ta.employee_id
 WHERE 
-    EXISTS (
-        SELECT 1
-        FROM total_salary ts
-        WHERE e.id = ts.employee_id
-    );
+    e.id = ts.employee_id;
 
 -- Cập nhật process thành true cho các bản ghi đã xử lý
 UPDATE 
