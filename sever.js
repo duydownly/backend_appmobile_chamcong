@@ -406,18 +406,11 @@ app.post('/refreshbalance', async (req, res) => {
       await client.query('BEGIN');
 
       const query = `
-      WITH recent_payment AS (
-          SELECT e.id AS employee_id,
-                 COALESCE(MAX(p.date), e.initiated_date) AS start_date
-          FROM employees e
-          LEFT JOIN payments_history p ON e.id = p.employee_id
-          GROUP BY e.id
-      ), 
-      total_salary AS (
+      WITH total_salary AS (
           SELECT a.employee_id,
                  SUM(a.salaryinday) AS total_salary
           FROM attendance a
-          JOIN recent_payment rp ON a.employee_id = rp.employee_id AND a.date >= rp.start_date AND a.date <= CURRENT_DATE
+          JOIN employees e ON a.employee_id = e.id AND a.date >= e.initiated_date AND a.date <= CURRENT_DATE
           GROUP BY a.employee_id
       )
       UPDATE employees
