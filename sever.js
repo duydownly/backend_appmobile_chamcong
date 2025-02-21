@@ -387,7 +387,7 @@ app.get('/employeetabscreen', async (req, res) => {
 
     // Thực hiện truy vấn SQL
     const query = `
-      SELECT e.id, e.name, e.balance, s.type
+      SELECT e.id, e.name, e.balance
       FROM employees e
       JOIN salaries s ON e.id = s.employee_id
       WHERE e.admin_id = $1
