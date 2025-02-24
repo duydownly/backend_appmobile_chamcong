@@ -427,21 +427,32 @@ total_advance AS (
     FROM 
         advance_amount_alert aaa
     WHERE 
-        aaa.status = 'Accepted' -- Chỉ giữ lại điều kiện status
+        aaa.status = 'Accepted'
     GROUP BY 
         aaa.employee_id
+),
+total_payments AS (
+    SELECT 
+        p.employee_id,
+        COALESCE(SUM(p.amount), 0) AS total_payments
+    FROM 
+        payments p
+    GROUP BY 
+        p.employee_id
 )
 UPDATE 
     employees e
 SET 
-    balance = COALESCE(ts.total_salary, 0) - COALESCE(ta.total_advance, 0)
+    balance = COALESCE(ts.total_salary, 0) - COALESCE(ta.total_advance, 0) + COALESCE(tp.total_payments, 0)
 FROM 
     total_salary ts
 LEFT JOIN 
-    total_advance ta 
-    ON ts.employee_id = ta.employee_id
+    total_advance ta ON ts.employee_id = ta.employee_id
+LEFT JOIN 
+    total_payments tp ON ts.employee_id = tp.employee_id
 WHERE 
     e.id = ts.employee_id;
+
       `;
 
       await client.query(query);
