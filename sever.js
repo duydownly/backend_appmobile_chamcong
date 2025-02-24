@@ -873,7 +873,32 @@ app.get('/notification_advance_admin', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+app.post('/adminrequestchangepayments', async (req, res) => {
+  const { employee_id, amount, description } = req.body;
 
+  // Kiểm tra các trường bắt buộc
+  if (!employee_id || !amount || !description) {
+      return res.status(400).json({ error: 'employee_id, amount, and description are required' });
+  }
+
+  try {
+      // Câu lệnh SQL để thêm hoặc cập nhật thông tin thanh toán
+      const query = `
+          INSERT INTO payments (employee_id, amount, description)
+          VALUES ($1, $2, $3)
+          RETURNING *;
+      `;
+
+      // Thực thi câu lệnh SQL
+      const result = await client.query(query, [employee_id, amount, description]);
+
+      // Trả về kết quả
+      res.status(200).json({ message: 'Payment updated successfully', data: result.rows[0] });
+  } catch (err) {
+      console.error('Error executing query', err);
+      res.status(500).json({ error: 'Internal server error' });
+  }
+});
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
