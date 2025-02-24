@@ -899,6 +899,33 @@ app.post('/adminrequestchangepayments', async (req, res) => {
       res.status(500).json({ error: 'Internal server error' });
   }
 });
+app.get('/historypayments', async (req, res) => {
+  try {
+    // Lấy admin_id từ query parameters
+    const { admin_id } = req.query;
+    
+    if (!admin_id) {
+      return res.status(400).json({ error: 'admin_id not provided' });
+    }
+
+    // Truy vấn SQL để lấy lịch sử thanh toán theo admin_id
+    const query = `
+      SELECT p.id, p.date, p.amount, p.description, p.employee_id
+      FROM payments p
+      JOIN employees e ON p.employee_id = e.id
+      WHERE e.admin_id = $1
+      ORDER BY p.date DESC
+    `;
+    
+    const result = await client.query(query, [admin_id]);
+
+    // Trả kết quả truy vấn
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error executing query', error.stack);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
