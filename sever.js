@@ -961,6 +961,34 @@ app.get('/notificationemployeeadvance', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+pp.patch('/notificationemployeeadvanceview', async (req, res) => {
+  try {
+    const { id } = req.body;
+
+    // Kiểm tra đầu vào hợp lệ
+    if (!id || isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid or missing id' });
+    }
+
+    const query = `
+      UPDATE advance_amount_alert
+      SET is_viewed_by_employee = true
+      WHERE id = $1
+      RETURNING *;
+    `;
+
+    const result = await client.query(query, [id]);
+
+    if (result.rows.length > 0) {
+      return res.json({ message: 'Update successful', data: result.rows[0] });
+    } else {
+      return res.status(404).json({ error: 'Record not found' });
+    }
+  } catch (error) {
+    console.error('Database query error:', error.stack);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
