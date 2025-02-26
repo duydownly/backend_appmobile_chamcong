@@ -937,6 +937,30 @@ app.get('/historypayments', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+app.get('/notificationemployeeadvance', async (req, res) => {
+  try {
+    const { employee_id } = req.query;
+
+    // Kiểm tra đầu vào hợp lệ
+    if (!employee_id || isNaN(employee_id)) {
+      return res.status(400).json({ error: 'Invalid or missing employee_id' });
+    }
+
+    const query = `
+      SELECT id, status, amount, reason, created_at, updated_at, 
+             rejection_reason, is_viewed_by_employee
+      FROM advance_amount_alert
+      WHERE employee_id = $1
+    `;
+
+    const result = await client.query(query, [employee_id]);
+
+    return res.json(result.rows);
+  } catch (error) {
+    console.error('Database query error:', error.stack);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
