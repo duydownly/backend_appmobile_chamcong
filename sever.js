@@ -662,6 +662,8 @@ SELECT
   TO_CHAR(COALESCE(a.date, aaa.updated_at), 'YYYY-MM-DD') AS date,
   a.status AS attendance_status,
   a.color,
+  a.check_in_time,
+  a.check_out_time,
   COALESCE(SUM(aaa.amount), 0) AS amount -- Tính tổng số tiền ứng trong ngày
 FROM
   attendance a
@@ -674,9 +676,10 @@ WHERE
   (a.employee_id = $1 OR aaa.employee_id = $1)
   AND (aaa.status = 'Accepted' OR aaa.status IS NULL)
 GROUP BY
-  a.date, a.status, a.color, aaa.updated_at
+  a.date, a.status, a.color, a.check_in_time, a.check_out_time, aaa.updated_at
 ORDER BY
   date;
+
     `;
 
     const result = await client.query(query, [employeeId]);
@@ -687,7 +690,9 @@ ORDER BY
       attendance_status: row.attendance_status,
       color: row.color,
       accept_date: row.accept_date,
-      amount: row.amount
+      amount: row.amount,
+      check_in_time: row.check_in_time,
+      check_out_time: row.check_out_time
     }));
 
     res.json(formattedResult);
