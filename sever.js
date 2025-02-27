@@ -964,35 +964,51 @@ app.get('/notificationemployeeadvance', async (req, res) => {
 app.put('/notificationemployeeadvanceview', async (req, res) => {
   try {
     const { id } = req.body;
-    console.log('Request body:', req.body); // Log dữ liệu đầu vào
+    console.log('📥 Received request body:', req.body); // Log dữ liệu đầu vào
 
+    // Kiểm tra ID có hợp lệ không
     if (!id || isNaN(id)) {
+      console.log('⚠️ Invalid ID received:', id);
       return res.status(400).json({ error: 'Invalid or missing id. ID must be a number.' });
     }
 
-    const query = `
+    // Kiểm tra xem ID có tồn tại trong DB không trước khi update
+    const checkQuery = 'SELECT * FROM advance_amount_alert WHERE id = $1';
+    const checkResult = await client.query(checkQuery, [id]);
+    console.log('🔍 Existing record:', checkResult.rows); // Log bản ghi trước khi update
+
+    if (checkResult.rows.length === 0) {
+      console.log(`❌ No record found for id: ${id}`);
+      return res.status(404).json({ error: `Record with ID ${id} not found. No data was updated.` });
+    }
+
+    // Cập nhật is_viewed_by_employee
+    const updateQuery = `
       UPDATE advance_amount_alert
       SET is_viewed_by_employee = true
       WHERE id = $1
+      RETURNING *;  -- Trả về bản ghi đã cập nhật
     `;
-    console.log('Executing query:', query, 'with id:', id); // Log truy vấn SQL
+    console.log('🚀 Executing update query:', updateQuery, 'with ID:', id);
 
-    const result = await client.query(query, [id]);
-    console.log('Query result:', result.rows); // Log kết quả truy vấn
+    const updateResult = await client.query(updateQuery, [id]);
+    console.log('✅ Query result after update:', updateResult.rows);
 
-    if (result.rows.length > 0) {
+    if (updateResult.rowCount > 0) {
       return res.status(200).json({ 
         message: 'Update successful', 
-        data: result.rows[0] 
+        data: updateResult.rows[0] 
       });
     } else {
-      return res.status(404).json({ error: 'Record not found. No datass was updated.' });
+      console.log(`❌ Update failed for ID: ${id}, no rows affected.`);
+      return res.status(404).json({ error: `Record with ID ${id} was not updated.` });
     }
   } catch (error) {
-    console.error('Database query error:', error.stack);
-    res.status(500).json({ error: 'Internal Server Error. Please try again later.' });
+    console.error('🔥 Database query error:', error.stack);
+    res.status(500).json({ error: 'Internal Server Error. Please try again later.', details: error.message });
   }
 });
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
