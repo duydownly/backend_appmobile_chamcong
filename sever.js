@@ -964,8 +964,8 @@ app.get('/notificationemployeeadvance', async (req, res) => {
 app.put('/notificationemployeeadvanceview', async (req, res) => {
   try {
     const { id } = req.body;
+    console.log('Request body:', req.body); // Log dữ liệu đầu vào
 
-    // Kiểm tra đầu vào hợp lệ
     if (!id || isNaN(id)) {
       return res.status(400).json({ error: 'Invalid or missing id. ID must be a number.' });
     }
@@ -976,8 +976,10 @@ app.put('/notificationemployeeadvanceview', async (req, res) => {
       WHERE id = $1
       RETURNING *;
     `;
+    console.log('Executing query:', query, 'with id:', id); // Log truy vấn SQL
 
     const result = await client.query(query, [id]);
+    console.log('Query result:', result.rows); // Log kết quả truy vấn
 
     if (result.rows.length > 0) {
       return res.status(200).json({ 
