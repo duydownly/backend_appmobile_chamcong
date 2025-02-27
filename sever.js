@@ -961,7 +961,7 @@ app.get('/notificationemployeeadvance', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-pp.patch('/notificationemployeeadvanceview', async (req, res) => {
+app.put('/notificationemployeeadvanceview', async (req, res) => {
   try {
     const { id } = req.body;
 
