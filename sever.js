@@ -987,7 +987,7 @@ app.put('/notificationemployeeadvanceview', async (req, res) => {
         data: result.rows[0] 
       });
     } else {
-      return res.status(404).json({ error: 'Record not found. No data was updated.' });
+      return res.status(404).json({ error: 'Record not found. No datass was updated.' });
     }
   } catch (error) {
     console.error('Database query error:', error.stack);
