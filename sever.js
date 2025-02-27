@@ -942,12 +942,9 @@ app.get('/notificationemployeeadvance', async (req, res) => {
     const { employee_id } = req.query;
 
     // Kiểm tra đầu vào hợp lệ
-    if (!employee_id) {
-      return res.status(400).json({ error: 'Missing employee_id' });
+    if (!employee_id || isNaN(employee_id)) {
+      return res.status(400).json({ error: 'Invalid or missing employee_id' });
     }
-
-    // Đảm bảo employee_id là chuỗi
-    const employeeIdString = String(employee_id);
 
     const query = `
       SELECT id, status, amount, reason, created_at, updated_at, 
@@ -956,8 +953,7 @@ app.get('/notificationemployeeadvance', async (req, res) => {
       WHERE employee_id = $1
     `;
 
-    // Sử dụng employeeIdString trong truy vấn
-    const result = await client.query(query, [employeeIdString]);
+    const result = await client.query(query, [employee_id]);
 
     return res.json(result.rows);
   } catch (error) {
