@@ -966,23 +966,23 @@ app.put('/notificationemployeeadvanceview', async (req, res) => {
     const { id } = req.body;
     console.log('📥 Received request body:', req.body); // Log dữ liệu đầu vào
 
-    // Kiểm tra ID có hợp lệ không
-    if (!id || isNaN(id)) {
+    // Kiểm tra ID có tồn tại và có phải chuỗi không
+    if (!id || typeof id !== 'string' || !/^\d+$/.test(id)) {
       console.log('⚠️ Invalid ID received:', id);
-      return res.status(400).json({ error: 'Invalid or missing id. ID must be a number.' });
+      return res.status(400).json({ error: 'Invalid or missing ID. It must be a numeric string.' });
     }
 
-    // Kiểm tra xem ID có tồn tại trong DB không trước khi update
+    // Kiểm tra xem ID có tồn tại trong database không trước khi update
     const checkQuery = 'SELECT * FROM advance_amount_alert WHERE id = $1';
     const checkResult = await client.query(checkQuery, [id]);
     console.log('🔍 Existing record:', checkResult.rows); // Log bản ghi trước khi update
 
     if (checkResult.rows.length === 0) {
-      console.log(`❌ No record found for id: ${id}`);
+      console.log(`❌ No record found for ID: ${id}`);
       return res.status(404).json({ error: `Record with ID ${id} not found. No data was updated.` });
     }
 
-    // Cập nhật is_viewed_by_employee
+    // Thực hiện cập nhật
     const updateQuery = `
       UPDATE advance_amount_alert
       SET is_viewed_by_employee = true
