@@ -689,11 +689,11 @@ ORDER BY
       date: row.date,
       attendance_status: row.attendance_status,
       color: row.color,
-      accept_date: row.accept_date,
       amount: row.amount,
-      check_in_time: row.check_in_time,
-      check_out_time: row.check_out_time
+      check_in_time: row.check_in_time ? new Date(row.check_in_time).toISOString().slice(11, 16) : null,
+      check_out_time: row.check_out_time ? new Date(row.check_out_time).toISOString().slice(11, 16) : null
     }));
+    
 
     res.json(formattedResult);
   } catch (err) {
