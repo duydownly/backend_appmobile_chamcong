@@ -941,9 +941,16 @@ app.get('/notificationemployeeadvance', async (req, res) => {
   try {
     const { employee_id } = req.query;
 
-    // Kiểm tra đầu vào hợp lệ
-    if (!employee_id || isNaN(employee_id)) {
-      return res.status(400).json({ error: 'Invalid or missing employee_id' });
+    // Kiểm tra đầu vào hợp lệ và chuyển đổi thành BigInt
+    if (!employee_id) {
+      return res.status(400).json({ error: 'Missing employee_id' });
+    }
+
+    let employeeIdBigInt;
+    try {
+      employeeIdBigInt = BigInt(employee_id); // Chuyển đổi thành BigInt
+    } catch (error) {
+      return res.status(400).json({ error: 'Invalid employee_id. Must be a valid integer.' });
     }
 
     const query = `
@@ -953,7 +960,7 @@ app.get('/notificationemployeeadvance', async (req, res) => {
       WHERE employee_id = $1
     `;
 
-    const result = await client.query(query, [employee_id]);
+    const result = await client.query(query, [employeeIdBigInt]);
 
     return res.json(result.rows);
   } catch (error) {
