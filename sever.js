@@ -974,7 +974,6 @@ app.put('/notificationemployeeadvanceview', async (req, res) => {
       UPDATE advance_amount_alert
       SET is_viewed_by_employee = true
       WHERE id = $1
-      RETURNING *;
     `;
     console.log('Executing query:', query, 'with id:', id); // Log truy vấn SQL
 
