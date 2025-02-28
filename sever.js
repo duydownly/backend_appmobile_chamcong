@@ -1020,6 +1020,56 @@ app.put('/notificationemployeeadvanceview', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error. Please try again later.', details: error.message });
   }
 });
+app.post('/changepasswordemployee', async (req, res) => {
+  console.log('Running API endpoint /changepasswordemployee');
+
+  const { employee_id, password, new_password } = req.body;
+
+  if (!employee_id || !password || !new_password) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  // Chuyển đổi employee_id sang BigInt để đảm bảo độ chính xác
+  let employeeId;
+  try {
+    employeeId = BigInt(employee_id); // Chuyển đổi sang BigInt
+  } catch (err) {
+    return res.status(400).json({ error: 'Invalid employee_id. It must be a valid integer.' });
+  }
+
+  try {
+    // Kiểm tra mật khẩu cũ
+    const checkQuery = `
+      SELECT password FROM employees
+      WHERE id = $1;
+    `;
+    const checkResult = await client.query(checkQuery, [employeeId.toString()]); // Sử dụng toString() để truyền giá trị BigInt vào query
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Employee not found' });
+    }
+
+    const currentPassword = checkResult.rows[0].password;
+
+    if (currentPassword !== password) {
+      return res.status(401).json({ error: 'Invalid old password' });
+    }
+
+    // Cập nhật mật khẩu mới
+    const updateQuery = `
+      UPDATE employees
+      SET password = $1
+      WHERE id = $2;
+    `;
+    await client.query(updateQuery, [new_password, employeeId.toString()]); // Sử dụng toString() để truyền giá trị BigInt vào query
+
+    console.log('Password updated successfully');
+    res.status(200).json({ message: 'Password updated successfully' });
+  } catch (err) {
+    console.error('Error executing query', err.stack);
+    res.status(500).json({ error: 'Error executing query', details: err.message });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
