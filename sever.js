@@ -1063,8 +1063,8 @@ app.post('/changepasswordemployee', async (req, res) => {
     `;
     await client.query(updateQuery, [new_password, employeeId.toString()]); // Sử dụng toString() để truyền giá trị BigInt vào query
 
-    console.log('Password updated successfully');
-    res.status(200).json({ message: 'Password updated successfully' });
+    console.log('Thay đổi mật khẩu thành công ');
+    res.status(200).json({ message: 'Thay đổi mật khẩu thành công ' });
   } catch (err) {
     console.error('Error executing query', err.stack);
     res.status(500).json({ error: 'Error executing query', details: err.message });
@@ -1113,8 +1113,8 @@ app.post('/changepasswordadmin', async (req, res) => {
     `;
     await client.query(updateQuery, [new_password, adminId.toString()]); // Sử dụng toString() để truyền giá trị BigInt vào query
 
-    console.log('Password updated successfully');
-    res.status(200).json({ message: 'Password updated successfully' });
+    console.log('Thay đổi mật khẩu thành công ');
+    res.status(200).json({ message: 'Thay đổi mật khẩu thành công ' });
   } catch (err) {
     console.error('Error executing query', err.stack);
     res.status(500).json({ error: 'Error executing query', details: err.message });
