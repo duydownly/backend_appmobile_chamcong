@@ -1120,6 +1120,33 @@ app.post('/changepasswordadmin', async (req, res) => {
     res.status(500).json({ error: 'Error executing query', details: err.message });
   }
 });
+app.post('/deleteemployee', async (req, res) => {
+  const { employee_id } = req.body;
+
+  if (!employee_id) {
+    return res.status(400).json({ error: 'employee_id is required' });
+  }
+
+  try {
+    // Xóa các bản ghi liên quan trong các bảng phụ thuộc trước (nếu có)
+    await client.query('DELETE FROM attendance WHERE employee_id = $1', [employee_id]);
+    await client.query('DELETE FROM salaries WHERE employee_id = $1', [employee_id]);
+    await client.query('DELETE FROM advance_amount_alert WHERE employee_id = $1', [employee_id]);
+    await client.query('DELETE FROM payments WHERE employee_id = $1', [employee_id]);
+    // Xóa nhân viên
+    const result = await client.query('DELETE FROM employees WHERE id = $1', [employee_id]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Employee not found' });
+    }
+
+    res.status(200).json({ message: 'Employee deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting employee:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
